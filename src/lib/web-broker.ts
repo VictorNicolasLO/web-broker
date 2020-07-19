@@ -38,7 +38,7 @@ export class WebBroker {
     this.queryBus = new QueryBus(this, nodeId);
   }
 
-  addChild(iframe: HTMLIFrameElement, name?: string) {
+  connectChild(iframe: HTMLIFrameElement, name?: string) {
     const parentTopics = this.getAllTopics();
     this.postChildMessage(iframe, {
       action: "init-child",

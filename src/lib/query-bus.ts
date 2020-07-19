@@ -17,7 +17,7 @@ export class QueryBus {
 
   createQueryName = (queryName: string) => `query.${this.nodeId}.${queryName}`;
 
-  queryHandler(queryName: string, handler: (data: any) => any) {
+  addQueryHandler(queryName: string, handler: (data: any) => any) {
     const completeQueryName = this.createQueryName(queryName);
     this.webBroker.subscribe(
       completeQueryName,

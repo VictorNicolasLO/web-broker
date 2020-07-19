@@ -15,13 +15,13 @@ export class CommandBus {
     });
   }
 
-  createCommandName = (queryName: string) =>
-    `command.${this.nodeId}.${queryName}`;
+  createCommandName = (commandName: string) =>
+    `command.${this.nodeId}.${commandName}`;
 
-  commandHandler(queryName: string, handler: (data: any) => any) {
-    const completeQueryName = this.createCommandName(queryName);
+  addCommandHandler(commandName: string, handler: (data: any) => any) {
+    const completecommandName = this.createCommandName(commandName);
     this.webBroker.subscribe(
-      completeQueryName,
+      completecommandName,
       ({ data, replyTopic, messageId }) => {
         try {
           const result = handler(data);
@@ -33,12 +33,12 @@ export class CommandBus {
     );
   }
 
-  query(queryName: string, data: any) {
+  command(commandName: string, data: any) {
     return new Promise((resolve, reject) => {
-      const completeQueryName = this.createCommandName(queryName);
+      const completecommandName = this.createCommandName(commandName);
       const messageId = generate();
       this.pendingMessages[messageId] = { resolve, reject };
-      this.webBroker.emmitEvent(completeQueryName, {
+      this.webBroker.emmitEvent(completecommandName, {
         data,
         replyTopic: this.replyTopic,
         messageId,
