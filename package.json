@@ -2,12 +2,12 @@
   "name": "web-broker",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "run-samples": ""
+    "build": "rm -rf ./dist && tsc",
+    "prepare": "yarn build"
   },
-  "author": "",
+  "author": "Victor Nicolas Lizarraga Ochoa",
   "license": "ISC",
   "dependencies": {
     "@types/react": "^16.9.35",

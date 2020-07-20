@@ -16,14 +16,16 @@ type Event = {
   payload: any;
 };
 
+export type LogType = "debug" | "none";
+
 export declare class CommandBus {
   addCommandHandler(commandName: string, handler: (data: any) => any): void;
-  command(commandName: string, data: any): any;
+  command(commandName: string, data: any): Promise<any>;
 }
 
 export declare class QueryBus {
   addQueryHandler(queryName: string, handler: (data: any) => any): void;
-  query(queryName: string, data: any): any;
+  query(queryName: string, data: any): Promise<any>;
 }
 
 export declare class EventBus {
@@ -35,7 +37,7 @@ export declare class WebBroker {
   queryBus: QueryBus;
   eventBus: EventBus;
   commandBus: CommandBus;
-
+  constructor(nodeId: string, logType: LogType);
   connectChild(iframe: HTMLIFrameElement, name?: string): number;
 
   subscribe(topic: string, listener: (data: any) => void): number;

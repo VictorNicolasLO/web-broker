@@ -3,6 +3,7 @@
 import { QueryBus } from "./query-bus";
 import { EventBus } from "./event-bus";
 import { CommandBus } from "./command-bus";
+import { LogType, Logger } from "../logger";
 
 type Subscription = {
   topic: string;
@@ -10,7 +11,7 @@ type Subscription = {
 
 type Child = {
   iframe: HTMLIFrameElement;
-  nodeId: string;
+  nodeId?: string;
 };
 
 type LocalSubscription = {
@@ -27,12 +28,15 @@ export class WebBroker {
   private parentId: string;
   private localSubscriptions: { [topic: string]: LocalSubscription[] } = {};
   private routingDirectory: { [topic: string]: string[] } = {};
+  private logger: Logger;
   queryBus: QueryBus;
   eventBus: EventBus;
   commandBus: CommandBus;
 
-  constructor(private nodeId: string) {
+  constructor(private nodeId: string, logType: LogType) {
+    this.logger = new Logger(logType, nodeId);
     window.addEventListener("message", this.proccessMessage);
+
     this.eventBus = new EventBus(this);
     this.commandBus = new CommandBus(this, nodeId);
     this.queryBus = new QueryBus(this, nodeId);
@@ -40,10 +44,11 @@ export class WebBroker {
 
   connectChild(iframe: HTMLIFrameElement, name?: string) {
     const parentTopics = this.getAllTopics();
+    this.logger.debug(`child loaded with ${name}`);
     this.postChildMessage(iframe, {
       action: "init-child",
       parentTopics,
-      index: this.children.push({ iframe, nodeId: name }),
+      index: this.children.push({ iframe, nodeId: name }) - 1,
     });
   }
 
@@ -58,10 +63,7 @@ export class WebBroker {
 
   private insertTopicsToRoutingDirectory(nodeId: string, topics: string[]) {
     topics.forEach((topic: string) => {
-      if (this.routingDirectory[topic]) {
-        this.routingDirectory[topic] = [];
-      }
-      this.routingDirectory[topic].push(nodeId);
+      this.newSubscription(nodeId, topic);
     });
   }
 
@@ -86,23 +88,33 @@ export class WebBroker {
         break;
       case "new-subscription":
         const subscription: Subscription = data.subscription;
-        if (!this.routingDirectory[subscription.topic].find(fromNodeId))
-          this.routingDirectory[subscription.topic].push(fromNodeId);
-        const message = { action: "new-subscription", subscription };
-        if (fromNodeId !== this.parentId) {
-          this.postParentMessage(message);
-        }
-        this.broadcastToChilden(
-          message,
-          (child) => child.nodeId !== fromNodeId
-        );
+        this.newSubscription(fromNodeId, subscription.topic);
         break;
       case "emmit-event":
+        this.logger.debug(`Event emmited ${name}`);
         const { topic, payload } = data.event as Event;
-        this.emmitEvent(topic, payload);
+        this.emmitEvent(topic, payload, fromNodeId);
         break;
     }
   };
+
+  private newSubscription(fromNodeId: string, topic: string) {
+    if (!this.routingDirectory[topic]) {
+      this.routingDirectory[topic] = [];
+    }
+    // TODO replace with indexOf
+    if (this.routingDirectory[topic].indexOf(fromNodeId) === -1) {
+      this.routingDirectory[topic].push(fromNodeId);
+      const message = { action: "new-subscription", subscription: { topic } };
+      if (fromNodeId !== this.parentId) {
+        this.postParentMessage(message);
+      }
+      this.broadcastToChilden(message, (child) => child.nodeId !== fromNodeId);
+      this.logger.debug("SUBSCRIPTIONS");
+      this.logger.debug(this.routingDirectory);
+      this.logger.debug(this.localSubscriptions);
+    }
+  }
 
   subscribe = (topic: string, listener: (data: any) => void) => {
     if (!this.localSubscriptions[topic]) {
@@ -114,7 +126,7 @@ export class WebBroker {
     return this.localSubscriptions[topic].push({ listener });
   };
 
-  emmitEvent(topic: string, data: any) {
+  emmitEvent(topic: string, data: any, fromNodeId?: string) {
     if (this.localSubscriptions[topic])
       this.localSubscriptions[topic].forEach((localSub) => {
         localSub.listener(data);
@@ -130,12 +142,13 @@ export class WebBroker {
             payload: data,
           },
         };
-        if (this.parentId === targetNodeId) {
+        if (this.parentId === targetNodeId && this.parentId !== fromNodeId) {
           this.postParentMessage(message);
           return;
         }
         const child = this.children.find(
-          (child) => child.nodeId === targetNodeId
+          (child) =>
+            child.nodeId === targetNodeId && child.nodeId !== fromNodeId
         );
         if (child) this.postChildMessage(child.iframe, message);
       });
@@ -155,7 +168,7 @@ export class WebBroker {
   }
 
   private postParentMessage(data: any) {
-    if (this.parentId)
+    if (this.parentId && window.parent.postMessage)
       window.parent.postMessage(
         {
           nodeId: this.nodeId,
@@ -167,7 +180,7 @@ export class WebBroker {
   }
 
   private postChildMessage(iframe: HTMLIFrameElement, data: any) {
-    iframe.contentWindow.postMessage(
+    iframe.contentWindow?.postMessage(
       {
         nodeId: this.nodeId,
         webBroker: true,

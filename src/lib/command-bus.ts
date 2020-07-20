@@ -6,11 +6,11 @@ export class CommandBus {
   pendingMessages: { [messageId: string]: { resolve: any; reject: any } } = {};
   constructor(private webBroker: WebBroker, private nodeId: string) {
     this.replyTopic = `reply.command.${nodeId}`;
-    webBroker.subscribe(this.replyTopic, ({ error, response, messageId }) => {
+    webBroker.subscribe(this.replyTopic, ({ error, result, messageId }) => {
       if (error) {
         this.pendingMessages[messageId].reject(error);
       } else {
-        this.pendingMessages[messageId].resolve(response);
+        this.pendingMessages[messageId].resolve(result);
       }
     });
   }
@@ -18,7 +18,7 @@ export class CommandBus {
   createCommandName = (commandName: string) =>
     `command.${this.nodeId}.${commandName}`;
 
-  addCommandHandler(commandName: string, handler: (data: any) => any) {
+  addCommandHandler = (commandName: string, handler: (data: any) => any) => {
     const completecommandName = this.createCommandName(commandName);
     this.webBroker.subscribe(
       completecommandName,
@@ -31,11 +31,11 @@ export class CommandBus {
         }
       }
     );
-  }
+  };
 
-  command(commandName: string, data: any) {
+  command = (commandName: string, data: any) => {
     return new Promise((resolve, reject) => {
-      const completecommandName = this.createCommandName(commandName);
+      const completecommandName = `command.${commandName}`;
       const messageId = generate();
       this.pendingMessages[messageId] = { resolve, reject };
       this.webBroker.emmitEvent(completecommandName, {
@@ -44,5 +44,5 @@ export class CommandBus {
         messageId,
       });
     });
-  }
+  };
 }
