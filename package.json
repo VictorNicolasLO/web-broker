@@ -1,6 +1,6 @@
 {
   "name": "web-broker",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "",
   "main": "dist/index.js",
   "scripts": {
@@ -9,11 +9,8 @@
   },
   "author": "Victor Nicolas Lizarraga Ochoa",
   "license": "ISC",
+  "repository": "https://github.com/VictorNicolasLO/web-broker",
   "dependencies": {
-    "@types/react": "^16.9.35",
-    "@types/react-dom": "^16.9.8",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
     "short-uuid": "^3.1.1",
     "typescript": "^3.8.3"
   }
