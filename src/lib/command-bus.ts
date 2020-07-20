@@ -38,11 +38,14 @@ export class CommandBus {
       const completecommandName = `command.${commandName}`;
       const messageId = generate();
       this.pendingMessages[messageId] = { resolve, reject };
-      this.webBroker.emmitEvent(completecommandName, {
+      const eventEmmited = this.webBroker.emmitEvent(completecommandName, {
         data,
         replyTopic: this.replyTopic,
         messageId,
       });
+      if (!eventEmmited) {
+        reject({ message: "Subscription not found" });
+      }
     });
   };
 }

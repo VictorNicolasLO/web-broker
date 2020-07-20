@@ -25,11 +25,14 @@ class QueryBus {
                 const completeQueryName = `query.${queryName}`;
                 const messageId = short_uuid_1.generate();
                 this.pendingMessages[messageId] = { resolve, reject };
-                this.webBroker.emmitEvent(completeQueryName, {
+                const eventEmmited = this.webBroker.emmitEvent(completeQueryName, {
                     data,
                     replyTopic: this.replyTopic,
                     messageId,
                 });
+                if (!eventEmmited) {
+                    reject({ message: "Subscription not found" });
+                }
             });
         };
         this.replyTopic = `reply.query.${nodeId}`;

@@ -37,11 +37,14 @@ export class QueryBus {
       const completeQueryName = `query.${queryName}`;
       const messageId = generate();
       this.pendingMessages[messageId] = { resolve, reject };
-      this.webBroker.emmitEvent(completeQueryName, {
+      const eventEmmited = this.webBroker.emmitEvent(completeQueryName, {
         data,
         replyTopic: this.replyTopic,
         messageId,
       });
+      if (!eventEmmited) {
+        reject({ message: "Subscription not found" });
+      }
     });
   };
 }

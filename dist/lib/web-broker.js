@@ -118,7 +118,9 @@ class WebBroker {
                 if (child)
                     this.postChildMessage(child.iframe, message);
             });
+            return true;
         }
+        return false;
     }
     broadcastToChilden(message, filter) {
         this.children.forEach((child) => {

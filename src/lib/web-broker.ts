@@ -152,7 +152,9 @@ export class WebBroker {
         );
         if (child) this.postChildMessage(child.iframe, message);
       });
+      return true;
     }
+    return false;
   }
 
   private broadcastToChilden(message: any, filter?: (child: Child) => boolean) {
